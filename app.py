@@ -1,3 +1,4 @@
+import os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
@@ -9,21 +10,25 @@ from selenium.webdriver.common.action_chains import ActionChains
 import time
 import json
 
-LOGINURL = 'https://erp.cisin.com/login.asp'
-TIMESHEETURL = 'https://erp.cisin.com/todaytimesheet.asp'
-COMPTIMESHEETURL = 'https://erp.cisin.com/timesheetnew.asp'
+LOGINURL = os.getenv('LOGINURL')
+TIMESHEETURL = os.getenv('TIMESHEETURL')
+COMPTIMESHEETURL = os.getenv('COMPTIMESHEETURL')
 
 def main():
     email = input('Enter your email: ')
     password = input('Enter your password: ')
 
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Ensure GUI is off
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("start-maximized"); 
+    options.add_argument("disable-infobars");
+    options.add_argument("--disable-extensions"); 
+    options.add_argument("--disable-gpu");
+    options.add_argument("--disable-dev-shm-usage");
 
-    # service = ChromeService(executable_path='/path/to/chromedriver')  # Update this path
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome(options=options)
     wait = WebDriverWait(driver, 20)
 
     try:
