@@ -1,51 +1,52 @@
-import os
+from fastapi import FastAPI, Form, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
 import time
-import json
+import os
+import re
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 LOGINURL = os.getenv('LOGINURL')
 TIMESHEETURL = os.getenv('TIMESHEETURL')
 COMPTIMESHEETURL = os.getenv('COMPTIMESHEETURL')
 
-def main():
-    email = input('Enter your email: ')
-    password = input('Enter your password: ')
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
+@app.get("/", response_class=HTMLResponse)
+async def get_form(request: Request):
+    return templates.TemplateResponse("form.html", {"request": request})
+
+@app.post("/submit", response_class=HTMLResponse)
+async def submit_form(request: Request, email: str = Form(...), password: str = Form(...)):
+    result = await run_selenium(email, password)
+    return templates.TemplateResponse("result.html", {"request": request, "result": result})
+
+async def run_selenium(email, password):
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("start-maximized"); 
-    options.add_argument("disable-infobars");
-    options.add_argument("--disable-extensions"); 
-    options.add_argument("--disable-gpu");
-    options.add_argument("--disable-dev-shm-usage");
-
     driver = webdriver.Chrome(options=options)
     wait = WebDriverWait(driver, 20)
 
     try:
         driver.get(LOGINURL)
-        print('Navigated to login page.')
-
         driver.find_element(By.NAME, 'uname').send_keys(email)
         driver.find_element(By.NAME, 'pass').send_keys(password)
-        print('Entered login credentials.')
-
         driver.find_element(By.CSS_SELECTOR, 'input.submit-login').click()
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'body')))  # Wait until logged in
-        print('Logged in successfully.')
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'body')))
 
         driver.get(TIMESHEETURL)
-
-        # Check if the "Monthly" link exists
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'ul.shadetabs')))
         links = driver.find_elements(By.CSS_SELECTOR, 'ul.shadetabs li a')
         monthly_link = None
@@ -58,25 +59,17 @@ def main():
         if monthly_link:
             monthly_link.click()
         else:
-            print('Monthly link not found.')
             driver.quit()
-            return
+            return 'Monthly link not found.'
 
         time.sleep(2)
-
         driver.get(COMPTIMESHEETURL)
-
-        # Wait for the table to load
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'table#product-table')))
-
-        # Extract and log the number of tables and their content
         tables = driver.find_elements(By.CSS_SELECTOR, 'table#product-table')
 
         if tables:
             first_table_content = tables[0].get_attribute('innerHTML')
-
             total_extra_minutes = 0
-
             rows = tables[0].find_elements(By.CSS_SELECTOR, 'tr')
 
             for row in rows:
@@ -100,25 +93,20 @@ def main():
                 total_hours += 1
 
             if total_hours < 0:
-                print(f'Lagged By: {total_hours} Hours, {remaining_minutes} Minutes')
+                return f'Lagged By: {total_hours} Hours, {remaining_minutes} Minutes'
             else:
-                print(f'Ahead By: {total_hours} Hours, {remaining_minutes} Minutes')
-
+                return f'Ahead By: {total_hours} Hours, {remaining_minutes} Minutes'
         else:
-            print('No table found with id="product-table"')
+            return 'No table found with id="product-table"'
 
     except Exception as e:
-        print('Error:', e)
+        return f'Error: {str(e)}'
     finally:
         driver.quit()
 
 def extract_hours_and_minutes(text):
-    import re
     regex = re.compile(r'(\d+)\s*hrs,\s*(\d+)\s*min')
     match = regex.search(text)
     if match:
         return int(match.group(1)), int(match.group(2))
     return None
-
-if __name__ == "__main__":
-    main()
