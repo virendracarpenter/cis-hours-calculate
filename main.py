@@ -1,134 +1,119 @@
-import os
-import asyncio
-from playwright.async_api import async_playwright
-import getpass
+from fastapi import FastAPI, Form, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+import re
 
-LOGINURL = os.getenv('LOGINURL')
-TIMESHEETURL = os.getenv('TIMESHEETURL')
-COMPTIMESHEETURL = os.getenv('COMPTIMESHEETURL')
 
-async def main():
-    email = input('Enter your email: ')
-    password = getpass.getpass('Enter your password: ')
+LOGINURL = 'https://erp.cisin.com/login.asp'
+TIMESHEETURL = 'https://erp.cisin.com/todaytimesheet.asp'
+COMPTIMESHEETURL = 'https://erp.cisin.com/timesheetnew.asp'
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
-        try:
-            await page.goto(LOGINURL, wait_until='networkidle')
-            print('Navigated to login page.')
 
-            await page.fill('input[name="uname"]', email)
-            await page.fill('input[name="pass"]', password)
-            print('Entered login credentials.')
+@app.get("/", response_class=HTMLResponse)
+async def get_form(request: Request):
+    return templates.TemplateResponse("form.html", {"request": request})
 
-            await page.click('input.submit-login')
-            await page.wait_for_load_state('networkidle')
-            print('Logged in successfully.')
 
-            await page.goto(TIMESHEETURL, wait_until='networkidle')
+@app.post("/submit", response_class=HTMLResponse)
+async def submit_form(request: Request, email: str = Form(...), password: str = Form(...)):
+    result = await run_selenium(email, password)
+    return templates.TemplateResponse("result.html", {"request": request, "result": result})
 
-            ul_selector = 'ul.shadetabs'
-            await page.wait_for_selector(ul_selector, timeout=60000)
 
-            link_text = 'Monthly'
-            monthly_link_exists = await page.evaluate(r'''(text) => {
-                const link = Array.from(document.querySelectorAll('ul.shadetabs li a')).find(el => el.textContent.includes(text));
-                return !!link;
-            }''', link_text)
+async def run_selenium(email, password):
+    # breakpoint()
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("start-maximized")
+    options.add_argument("disable-infobars")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-dev-shm-usage")
+    driver = webdriver.Chrome(options=options)
+    wait = WebDriverWait(driver, 20)
 
-            if monthly_link_exists:
-                await page.evaluate(r'''(text) => {
-                    const link = Array.from(document.querySelectorAll('ul.shadetabs li a')).find(el => el.textContent.includes(text));
-                    if (link) {
-                        link.click();
-                    }
-                }''', link_text)
+    try:
+        driver.get(LOGINURL)
+        driver.find_element(By.NAME, 'uname').send_keys(email)
+        driver.find_element(By.NAME, 'pass').send_keys(password)
+        driver.find_element(By.CSS_SELECTOR, 'input.submit-login').click()
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'body')))
+
+        driver.get(TIMESHEETURL)
+        wait.until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, 'ul.shadetabs')))
+        links = driver.find_elements(By.CSS_SELECTOR, 'ul.shadetabs li a')
+        monthly_link = None
+
+        for link in links:
+            if 'Monthly' in link.text:
+                monthly_link = link
+                break
+
+        if monthly_link:
+            monthly_link.click()
+        else:
+            driver.quit()
+            return 'Monthly link not found.'
+
+        time.sleep(2)
+        driver.get(COMPTIMESHEETURL)
+        wait.until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, 'table#product-table')))
+        tables = driver.find_elements(By.CSS_SELECTOR, 'table#product-table')
+
+        if tables:
+            first_table_content = tables[0].get_attribute('innerHTML')
+            total_extra_minutes = 0
+            rows = tables[0].find_elements(By.CSS_SELECTOR, 'tr')
+
+            for row in rows:
+                cells = row.find_elements(By.CSS_SELECTOR, 'td')
+                for cell in cells:
+                    text = cell.text.strip()
+                    time_data = extract_hours_and_minutes(text)
+                    if time_data:
+                        hours, minutes = time_data
+                        if hours > 8:
+                            total_extra_minutes += ((hours - 8) * 60) + minutes
+                        elif hours < 8:
+                            total_extra_minutes -= ((8 - hours) * 60) - minutes
+                        else:
+                            total_extra_minutes += minutes
+
+            total_hours = total_extra_minutes // 60
+            remaining_minutes = total_extra_minutes % 60
+
+            if total_hours < 0:
+                total_hours += 1
+
+            if total_hours < 0:
+                return f'Lagged By: {total_hours} Hours, {remaining_minutes} Minutes'
             else:
-                print('Monthly link not found.')
-                await browser.close()
-                return
+                return f'Ahead By: {total_hours} Hours, {remaining_minutes} Minutes'
+        else:
+            return 'No table found with id="product-table"'
 
-            await asyncio.sleep(2)
+    except Exception as e:
+        return f'Error: {str(e)}'
+    finally:
+        driver.quit()
 
-            await page.goto(COMPTIMESHEETURL, wait_until='networkidle')
 
-            await page.wait_for_function(r'''() => {
-                const tables = document.querySelectorAll('table#product-table');
-                return tables.length > 0;
-            }''', timeout=10000)
-
-            table_contents = await page.evaluate(r'''() => {
-                const tables = document.querySelectorAll('table#product-table');
-                const tableContents = [];
-                tables.forEach((table, index) => {
-                    tableContents.push({
-                        index: index + 1,
-                        content: table.innerHTML
-                    });
-                });
-                return tableContents;
-            }''')
-
-            if table_contents:
-                first_table_content = table_contents[0]['content']
-
-                table_content = await page.evaluate(r'''(first_table_content) => {
-                    const table = document.createElement('table');
-                    table.innerHTML = first_table_content;
-
-                    const rows = table.querySelectorAll('tr');
-
-                    const extract_hours_and_minutes = (str) => {
-                        const regex = /(\d+)\s*hrs,\s*(\d+)\s*min/;
-                        const match = str.match(regex);
-                        if (match) {
-                            const hours = parseInt(match[1]);
-                            const minutes = parseInt(match[2]);
-                            return { hours, minutes };
-                        }
-                        return null;
-                    };
-
-                    let total_extra_minutes = 0;
-
-                    rows.forEach(row => {
-                        const cells = row.querySelectorAll('td');
-                        cells.forEach(cell => {
-                            const text = cell.textContent.trim();
-                            const time = extract_hours_and_minutes(text);
-                            if (time) {
-                                if (time.hours > 8) {
-                                    total_extra_minutes += ((time.hours - 8) * 60) + time.minutes;
-                                } else if (time.hours < 8) {
-                                    total_extra_minutes -= ((8 - time.hours) * 60) - time.minutes;
-                                } else {
-                                    total_extra_minutes += time.minutes;
-                                }
-                            }
-                        });
-                    });
-
-                    let total_hours = Math.floor(total_extra_minutes / 60);
-                    let remaining_minutes = total_extra_minutes % 60;
-
-                    if (total_hours < 0) {
-                        total_hours += 1;
-                    }
-                    return { total_hours, total_minutes: remaining_minutes };
-                }''', first_table_content)
-
-                if table_content['total_hours'] < 0:
-                    print(f'Lagged By: {table_content["total_hours"]} Hours, {table_content["total_minutes"]} Minutes')
-                else:
-                    print(f'Ahead By: {table_content["total_hours"]} Hours, {table_content["total_minutes"]} Minutes')
-            else:
-                print('No table found with id="product-table"')
-
-        except Exception as e:
-            print('Error:', e)
-        finally:
-            await browser.close()
-
-asyncio.run(main())
+def extract_hours_and_minutes(text):
+    regex = re.compile(r'(\d+)\s*hrs,\s*(\d+)\s*min')
+    match = regex.search(text)
+    if match:
+        return int(match.group(1)), int(match.group(2))
+    return None
