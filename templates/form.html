@@ -1,16 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login Form</title>
+    <title>Welcome to CIS Hours Calculator</title>
+    <!-- Material-UI styles -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f0f0;
+        }
+        .formContainer {
+            width: 400px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+        }
+        .formContainer h2 {
+            text-align: center;
+        }
+        .formContainer form {
+            display: flex;
+            flex-direction: column;
+        }
+        .formContainer form label {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #333; /* Default color */
+        }
+        .formContainer form input {
+            height: 40px;
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+        .formContainer form input[type="submit"] {
+            background-color: #1976d2;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: none;
+        }
+        .formContainer form input[type="submit"]:hover {
+            background-color: #1565c0;
+        }
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+        .formContainer.dark-mode {
+            background-color: #444 !important; /* Important to override the default background */
+            box-shadow: 0px 0px 10px 0px rgba(255,255,255,0.1);
+        }
+        .formContainer.dark-mode h2,
+        .formContainer.dark-mode form label {
+            color: #fff; /* Label color in dark mode */
+        }
+        .formContainer.dark-mode form input {
+            background-color: #555;
+            color: #fff;
+            border-color: #666;
+        }
+        .formContainer.dark-mode form input[type="submit"] {
+            background-color: #1976d2;
+            color: #fff;
+        }
+        .formContainer.dark-mode form input[type="submit"]:hover {
+            background-color: #1565c0;
+        }
+        /* Dark mode toggle icon */
+        .dark-mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #333; /* Default color */
+        }
+        .dark-mode-toggle.dark-mode {
+            color: #fff; /* Color in dark mode */
+        }
+    </style>
 </head>
 <body>
-    <h2>Login Form</h2>
-    <form method="post" action="/submit">
-        <label for="email">Email:</label><br>
-        <input type="text" id="email" name="email"><br><br>
-        <label for="password">Password:</label><br>
-        <input type="password" id="password" name="password"><br><br>
-        <input type="submit" value="Submit">
-    </form>
+    <div class="formContainer">
+        <h2>Enter your login credentials</h2>
+        <form method="post" action="/submit">
+            <label for="email">Email:</label>
+            <input type="text" id="email" name="email" required><br><br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required><br><br>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+
+    <!-- Dark mode toggle icon -->
+    <div class="dark-mode-toggle material-icons" onclick="toggleDarkMode()" id="darkModeToggle">
+        brightness_4
+    </div>
+
+    <script>
+        function toggleDarkMode() {
+            const body = document.body;
+            const formContainer = document.querySelector('.formContainer');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            body.classList.toggle('dark-mode');
+            formContainer.classList.toggle('dark-mode');
+            darkModeToggle.classList.toggle('dark-mode');
+            const icon = body.classList.contains('dark-mode') ? 'brightness_high' : 'brightness_4';
+            darkModeToggle.textContent = icon;
+        }
+    </script>
 </body>
 </html>
