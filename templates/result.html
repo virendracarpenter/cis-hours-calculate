@@ -2,10 +2,84 @@
 <html>
 <head>
     <title>Result</title>
+    <!-- Material-UI styles -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f0f0;
+        }
+        .resultContainer {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+            width: 400px;
+        }
+        .resultContainer.dark-mode {
+            background-color: #444;
+            color: #fff;
+            box-shadow: 0px 0px 10px 0px rgba(255,255,255,0.1);
+        }
+        .resultContainer h2 {
+            margin-bottom: 20px;
+        }
+        .resultContainer p {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        .resultContainer a {
+            color: #1976d2;
+            text-decoration: none;
+            display: block;
+            margin-top: 20px;
+        }
+        .resultContainer a:hover {
+            text-decoration: underline;
+        }
+        /* Dark mode toggle icon */
+        .dark-mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #333; /* Default color */
+        }
+        .dark-mode-toggle.dark-mode {
+            color: #fff; /* Color in dark mode */
+        }
+    </style>
 </head>
 <body>
-    <h2>Result</h2>
-    <p>{{ result }}</p>
-    <a href="/">Back to form</a>
+    <div class="resultContainer">
+        <h2>Result</h2>
+        <p>{{ result }}</p>
+        <a href="/">Back to Login</a>
+    </div>
+
+    <!-- Dark mode toggle icon -->
+    <div class="dark-mode-toggle material-icons" onclick="toggleDarkMode()" id="darkModeToggle">
+        brightness_4
+    </div>
+
+    <script>
+        function toggleDarkMode() {
+            const body = document.body;
+            const resultContainer = document.querySelector('.resultContainer');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            body.classList.toggle('dark-mode');
+            resultContainer.classList.toggle('dark-mode');
+            darkModeToggle.classList.toggle('dark-mode');
+            const icon = body.classList.contains('dark-mode') ? 'brightness_high' : 'brightness_4';
+            darkModeToggle.textContent = icon;
+        }
+    </script>
 </body>
 </html>
