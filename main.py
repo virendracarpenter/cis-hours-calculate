@@ -1,3 +1,4 @@
+import re
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -6,12 +7,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
-import re
 
 
 LOGINURL = 'https://erp.cisin.com/login.asp'
-TIMESHEETURL = 'https://erp.cisin.com/todaytimesheet.asp'
 COMPTIMESHEETURL = 'https://erp.cisin.com/timesheetnew.asp'
 
 app = FastAPI()
@@ -30,7 +28,6 @@ async def submit_form(request: Request, email: str = Form(...), password: str = 
 
 
 async def run_selenium(email, password):
-    # breakpoint()
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -50,31 +47,12 @@ async def run_selenium(email, password):
         driver.find_element(By.CSS_SELECTOR, 'input.submit-login').click()
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'body')))
 
-        driver.get(TIMESHEETURL)
-        wait.until(EC.presence_of_element_located(
-            (By.CSS_SELECTOR, 'ul.shadetabs')))
-        links = driver.find_elements(By.CSS_SELECTOR, 'ul.shadetabs li a')
-        monthly_link = None
-
-        for link in links:
-            if 'Monthly' in link.text:
-                monthly_link = link
-                break
-
-        if monthly_link:
-            monthly_link.click()
-        else:
-            driver.quit()
-            return 'Monthly link not found.'
-
-        time.sleep(2)
         driver.get(COMPTIMESHEETURL)
         wait.until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, 'table#product-table')))
         tables = driver.find_elements(By.CSS_SELECTOR, 'table#product-table')
 
         if tables:
-            first_table_content = tables[0].get_attribute('innerHTML')
             total_extra_minutes = 0
             rows = tables[0].find_elements(By.CSS_SELECTOR, 'tr')
 
