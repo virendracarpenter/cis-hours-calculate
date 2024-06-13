@@ -24,4 +24,4 @@ EXPOSE $PORT
 ENV PYTHONUNBUFFERED=1
 
 # Run the FastAPI application using uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "$PORT"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
