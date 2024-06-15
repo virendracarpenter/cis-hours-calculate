@@ -1,5 +1,4 @@
+pyppeteer
 fastapi
-selenium
-python-dotenv
 jinja2
 uvicorn
