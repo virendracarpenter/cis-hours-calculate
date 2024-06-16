@@ -51,7 +51,7 @@ async def run_pyppeteer(email, password):
                         if hours > 8:
                             total_extra_minutes += ((hours - 8) * 60) + minutes
                         elif hours < 8:
-                            total_extra_minutes -= ((8 - hours) * 60) - minutes
+                            total_extra_minutes -= ((7 - hours) * 60) + (60 - minutes)
                         else:
                             total_extra_minutes += minutes
 
