@@ -39,6 +39,8 @@ async def run_pyppeteer(email, password):
 
         if tables:
             std_minutes = 8 * 60
+            overtime = 0
+            shortfall = 0
             rows = await tables[0].querySelectorAll('tr')
             for row in rows:
                 cells = await row.querySelectorAll('td')
@@ -52,8 +54,8 @@ async def run_pyppeteer(email, password):
                             overtime += total_mins - std_minutes
                         elif total_mins < std_minutes:
                             shortfall += std_minutes - total_mins
-                        ot_hours, ot_minutes = divmod(overtime, 60)
-                        sf_hours, sf_minutes = divmod(shortfall, 60)
+                ot_hours, ot_minutes = divmod(overtime, 60)
+                sf_hours, sf_minutes = divmod(shortfall, 60)
                 return {
                     "Over Time": (ot_hours, ot_minutes),
                     "Short Time": (sf_hours, sf_minutes)
