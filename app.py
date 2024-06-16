@@ -38,36 +38,28 @@ async def run_pyppeteer(email, password):
         tables = await page.querySelectorAll('table#product-table')
 
         if tables:
-            total_extra_minutes = 0
+            std_minutes = 8 * 60
             rows = await tables[0].querySelectorAll('tr')
-
             for row in rows:
                 cells = await row.querySelectorAll('td')
                 for cell in cells:
                     text = (await page.evaluate('(element) => element.textContent', cell)).strip()
                     time_data = extract_hours_and_minutes(text)
                     if time_data:
-                        hours, minutes = time_data
-                        if hours > 8:
-                            total_extra_minutes += ((hours - 8) * 60) + minutes
-                        elif hours < 8:
-                            total_extra_minutes -= ((7 - hours) * 60) + (60 - minutes)
-                        else:
-                            total_extra_minutes += minutes
-
-            total_hours = total_extra_minutes // 60
-            remaining_minutes = total_extra_minutes % 60
-
-            if total_hours < 0:
-                total_hours += 1
-
-            if total_hours < 0:
-                return f'Lagged By: {total_hours} Hours, {remaining_minutes} Minutes'
-            else:
-                return f'Ahead By: {total_hours} Hours, {remaining_minutes} Minutes'
+                        hrs, mins = time_data
+                        total_mins = hrs * 60 + mins
+                        if total_mins > std_minutes:
+                            overtime += total_mins - std_minutes
+                        elif total_mins < std_minutes:
+                            shortfall += std_minutes - total_mins
+                        ot_hours, ot_minutes = divmod(overtime, 60)
+                        sf_hours, sf_minutes = divmod(shortfall, 60)
+                return {
+                    "Over Time": (ot_hours, ot_minutes),
+                    "Short Time": (sf_hours, sf_minutes)
+                }
         else:
-            return 'No table found with id="product-table"'
-
+            return 'No data found'
     except TimeoutError as e:
             return False
     except Exception as e:
