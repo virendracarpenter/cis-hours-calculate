@@ -2,3 +2,4 @@ pyppeteer
 fastapi
 jinja2
 uvicorn
+pyppeteer_stealth
