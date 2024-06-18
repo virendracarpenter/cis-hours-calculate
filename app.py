@@ -29,7 +29,7 @@ async def submit_form(request: Request, email: str = Form(...), password: str = 
                                           )
     return templates.TemplateResponse("result.html",
                                       {"request": request,
-                                       "result": "Invalid Credentials"}
+                                       "over": "Invalid Credentials"}
                                       )
 
 

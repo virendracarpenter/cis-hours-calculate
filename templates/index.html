@@ -4,7 +4,8 @@
     <title>Welcome to CIS Hours Calculator</title>
     <!-- Material-UI styles -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
     <style>
         body {
             display: flex;
@@ -16,6 +17,7 @@
             color: #fff;
             margin: 0;
             position: relative;
+            flex-direction: column;
         }
 
         .beta-label {
@@ -160,14 +162,36 @@
         .github-link a {
             color: #1976d2;
             text-decoration: none;
+            color: inherit;
             font-size: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .github-link a:hover {
-            text-decoration: underline;
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+          }
+
+        .btn {
+            width: 40px;
+            height: 40px;
+            margin: 15px;
+            outline: none;
+            border: none;
+            background: #fff;
+            border-radius: 20%;
+        }
+        .btn a {
+            text-decoration: none;
+            color: inherit;
+        }
+        .btn a i {
+            font-size:25px;
         }
     </style>
 </head>
@@ -175,15 +199,15 @@
     <div class="beta-label">BETA Version</div>
     <div class="formContainer">
         <h2>
-            <span class="material-icons">login</span>Login
+            <i class="fa-solid fa-right-to-bracket"></i>Login
         </h2>
         <form id="loginForm" method="post" action="/submit" onsubmit="showLoading()">
             <label for="email">
-                <span class="material-icons">email</span>Email:
+                <i class="fa-solid fa-envelope"></i>Email:
             </label>
             <input type="text" id="email" name="email" required><br><br>
             <label for="password">
-                <span class="material-icons">lock</span>Password:
+                <i class="fa-solid fa-key"></i>Password:
             </label>
             <input type="password" id="password" name="password" required><br><br>
             <input type="submit" value="Calculate Hours 🚀">
@@ -193,11 +217,33 @@
             </div>
         </form>
     </div>
+    <div class="">
+        <button class="btn">
+            <a href="https://linkedin.com/in/virendracarpenter" target="_blank">
+                <i class="fa-brands fa-linkedin-in"></i>
+            </a>
+        </button>
+        <button class="btn">
+            <a href="https://instagram.com/virendra_carpenter" target="_blank">
+                <i class="fa-brands fa-instagram"></i>
+            </a>
+        </button>
+        <button class="btn">
+            <a href="https://x.com/veecarpenter" target="_blank">
+                <i class="fa-brands fa-x"></i>
+            </a>
+        </button>
+        <button class="btn">
+            <a href="https://github.com/virendracarpenter" target="_blank">
+                <i class="fa-brands fa-github"></i>
+            </a>
+        </button>
+    </div>
 
     <!-- GitHub link -->
     <div class="github-link">
         <a href="https://github.com/virendracarpenter/cis-hours-calculator" target="_blank">
-            <span class="material-icons">code</span> Feel free to contribute on GitHub
+            <i class="fa-solid fa-code"></i>Feel free to contribute on GitHub
         </a>
     </div>
 
